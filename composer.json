@@ -1,0 +1,13 @@
+{
+    "name": "zicht/z-plugin-messages",
+    "description": "Messages plugin for Z",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Boudewijn Schoon",
+            "email": "boudewijn@zicht.nl"
+        }
+    ],
+    "require": {
+    }
+}

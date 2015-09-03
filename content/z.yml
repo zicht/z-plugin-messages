@@ -1,0 +1,59 @@
+# @version ">=2.0"
+
+tasks:
+  messages.backup:
+    help: 'Backup messages for all locales into a message archive'
+    args:
+      target_env: ?
+      _backup_file: sprintf("messages-%s-%s.tar.gz", target_env, now)
+    do:
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump nl > messages.nl.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump en > messages.en.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php messages.*.php"
+      - rsync $(VERBOSE ? "--progress") $(envs[target_env].ssh):$(envs[target_env].root)$(_backup_file) ./$(_backup_file)
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && rm $(_backup_file) messages.*.php"
+    yield: _backup_file
+
+  messages.load:
+    help: 'Load a message archive into the current environment'
+    args:
+      file: ?
+    flags:
+      overwrite: false
+    do: |
+      cd $(envs.local.root)
+      tar zxf $(file)
+      php app/console zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+      php app/console zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+      rm messages.*.php
+
+  messages.pull:
+    help: 'Pull a message archive from a remote env into the current environment'
+    args:
+      target_env: ?
+      file: tasks.messages.backup
+    do:
+      - @messages.load
+      - rm $(file)
+
+  messages.push:
+    help: |
+      Push a message archive to a remote environment
+
+      The message archive is typically built by a message:dump or message:backup command:
+
+      z messages:backup staging
+      z messages:push production ./messages-staging-*.tar.gz
+    # unless: !confirm(sprintf("You are pushing message archive <comment>%s</comment> to environment <comment>%s</comment>, are you sure?", file, target_env))
+    args:
+      target_env:  ?
+      file: ?
+    flags:
+      overwrite: false
+    do:
+      - scp $(file) $(envs[target_env].ssh):$(envs[target_env].root)$(file)
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); tar zxf $(file)"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.nl.php $(overwrite ? "--overwrite")"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.en.php $(overwrite ? "--overwrite")"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); rm messages.*.php"
+
