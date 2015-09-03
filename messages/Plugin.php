@@ -6,7 +6,7 @@
  * @copyright 2012 Gerard van Helden <http://melp.nl>
  */
 
-namespace Zicht\Tool\Plugin\Content;
+namespace Zicht\Tool\Plugin\Messages;
 
 use \Zicht\Tool\Plugin as BasePlugin;
 use \Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
