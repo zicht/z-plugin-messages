@@ -9,9 +9,32 @@ tasks:
     do:
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump nl > messages.nl.php"
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump en > messages.en.php"
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php messages.*.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php"
       - rsync $(VERBOSE ? "--progress") $(envs[target_env].ssh):$(envs[target_env].root)$(_backup_file) ./$(_backup_file)
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && rm $(_backup_file) messages.*.php"
+    yield: _backup_file
+
+  messages.load_files:
+    help: 'Connect to target_env and load messages from all yml files'
+    args:
+      target_env: ?
+    flags:
+      overwrite: false
+    do: |
+      @(sh ssh(target_env))
+        cd $(envs[target_env].root);
+        find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(overwrite ? "--overwrite") zicht:messages:load '{}'
+
+  messages.local.backup:
+    help: 'Backup messages from current/local environmant for all locales into a message archive'
+    args:
+      _backup_file: sprintf("messages-local-%s.tar.gz", now)
+    do:
+      - php app/console zicht:messages:dump nl > messages.nl.php
+      - php app/console zicht:messages:dump en > messages.en.php
+      - tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php
+      - rm messages.*.php
+      - echo "--> $(_backup_file)"
     yield: _backup_file
 
   messages.load:
@@ -44,7 +67,7 @@ tasks:
 
       z messages:backup staging
       z messages:push production ./messages-staging-*.tar.gz
-    # unless: !confirm(sprintf("You are pushing message archive <comment>%s</comment> to environment <comment>%s</comment>, are you sure?", file, target_env))
+    unless: !confirm(sprintf("You are pushing message archive <comment>%s</comment> to environment <comment>%s</comment>, are you sure?", file, target_env))
     args:
       target_env:  ?
       file: ?
