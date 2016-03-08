@@ -7,8 +7,9 @@ tasks:
       target_env: ?
       _backup_file: sprintf("messages-%s-%s.tar.gz", target_env, now)
     do:
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump nl > messages.nl.php"
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump en > messages.en.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump nl --format php > messages.nl.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump en --format php > messages.en.php"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && php app/console --env=$(target_env) zicht:messages:dump fr --format php > messages.fr.php"
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php"
       - rsync $(VERBOSE ? "--progress") $(envs[target_env].ssh):$(envs[target_env].root)$(_backup_file) ./$(_backup_file)
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root) && rm $(_backup_file) messages.*.php"
@@ -24,14 +25,16 @@ tasks:
       @(sh ssh(target_env))
         cd $(envs[target_env].root);
         find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(overwrite ? "--overwrite") zicht:messages:load '{}' \;
+        find vendor/zicht -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(overwrite ? "--overwrite") zicht:messages:load '{}' \;
 
   messages.local.backup:
     help: 'Backup messages from current/local environmant for all locales into a message archive'
     args:
       _backup_file: sprintf("messages-local-%s.tar.gz", now)
     do:
-      - php app/console zicht:messages:dump nl > messages.nl.php
-      - php app/console zicht:messages:dump en > messages.en.php
+      - php app/console zicht:messages:dump nl --format php > messages.nl.php
+      - php app/console zicht:messages:dump en --format php > messages.en.php
+      - php app/console zicht:messages:dump fr --format php > messages.fr.php
       - tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php
       - rm messages.*.php
       - echo "--> $(_backup_file)"
@@ -48,6 +51,7 @@ tasks:
       tar zxf $(file)
       php app/console zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
       php app/console zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+      php app/console zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
       rm messages.*.php
 
   messages.pull:
@@ -78,5 +82,6 @@ tasks:
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); tar zxf $(file)"
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.nl.php $(overwrite ? "--overwrite")"
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.en.php $(overwrite ? "--overwrite")"
+      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.fr.php $(overwrite ? "--overwrite")"
       - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); rm messages.*.php"
 
