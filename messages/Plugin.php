@@ -8,12 +8,46 @@
 
 namespace Zicht\Tool\Plugin\Messages;
 
-use \Zicht\Tool\Plugin as BasePlugin;
-use \Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Zicht\Tool\Container\Container;
+use Zicht\Tool\Plugin as BasePlugin;
 
 /**
  * Messages plugin
  */
 class Plugin extends BasePlugin
 {
+    /**
+     * Appends messages configuration options
+     *
+     * @param \Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition $rootNode
+     * @return mixed|void
+     */
+    public function appendConfiguration(ArrayNodeDefinition $rootNode)
+    {
+        $rootNode
+            ->children()
+                ->arrayNode('messages')
+                    ->children()
+                        ->scalarNode('yaz_cleanup')->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @{inheritDoc}
+     */
+    public function setContainer(Container $container)
+    {
+        if (!$container->resolve(array('messages', 'yaz_cleanup'))) {
+            $container->decl(
+                array('messages', 'yaz_cleanup'),
+                function (Container $c) {
+                    return realpath(__DIR__ . '/yaz-cleanup');
+                }
+            );
+        }
+    }
 }
