@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+from yaz import main
+from yaz.decorator import task
+from yaz.plugins.message import Message
+
+class Message(Message):
+    @task(main=True)
+    def cleanup(*args, **kwargs):
+        return parent().main(*args, **kwargs)
+
+if __name__ == "__main__":
+    main(["message"])
