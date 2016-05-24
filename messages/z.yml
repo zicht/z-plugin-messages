@@ -27,8 +27,8 @@ tasks:
     do: |
       @(sh local ? SHELL : ssh(target_env))
         cd $(envs[target_env].root);
-        find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") zicht:messages:load '{}' \;
         find vendor/zicht -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") zicht:messages:load '{}' \;
+        find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") zicht:messages:load '{}' \;
 
   messages.local.backup:
     help: 'Backup messages from current/local environmant for all locales into a message archive'
