@@ -28,7 +28,9 @@ class Plugin extends BasePlugin
         $rootNode
             ->children()
                 ->arrayNode('messages')
+                    ->addDefaultsIfNotSet()
                     ->children()
+                        ->booleanNode('overwrite_compatibility')->defaultTrue()->end()
                         ->scalarNode('yaz_cleanup')->end()
                     ->end()
                 ->end()

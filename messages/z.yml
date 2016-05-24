@@ -21,14 +21,24 @@ tasks:
       target_env: ?
     flags:
       local: false
+      overwrite: false
       overwrite_unknown: false
       overwrite_user: false
       overwrite_import: true
-    do: |
-      @(sh local ? SHELL : ssh(target_env))
-        cd $(envs[target_env].root);
-        find vendor/zicht -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") zicht:messages:load '{}' \;
-        find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") zicht:messages:load '{}' \;
+    do:
+      - |
+          @(sh local ? SHELL : ssh(target_env))
+          @(if messages.overwrite_compatibility)
+          cd $(envs[target_env].root);
+          find vendor/zicht -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite") zicht:messages:load '{}' \;
+          find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite") zicht:messages:load '{}' \;
+
+      - |
+          @(sh local ? SHELL : ssh(target_env))
+          @(if !messages.overwrite_compatibility)
+          cd $(envs[target_env].root);
+          find vendor/zicht -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") zicht:messages:load '{}' \;
+          find src -type f -name "*.??.yml" -exec php $(envs[target_env].root)app/console --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") zicht:messages:load '{}' \;
 
   messages.local.backup:
     help: 'Backup messages from current/local environmant for all locales into a message archive'
@@ -48,16 +58,28 @@ tasks:
     args:
       file: ?
     flags:
+      overwrite: false
       overwrite_unknown: false
       overwrite_user: false
       overwrite_import: true
-    do: |
-      cd $(envs.local.root)
-      tar zxf $(file)
-      php app/console zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") 
-      php app/console zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") 
-      php app/console zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import") 
-      rm messages.*.php
+    do:
+      - |
+        @(if messages.overwrite_compatibility)
+        cd $(envs.local.root)
+        tar zxf $(file)
+        php app/console zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        php app/console zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        php app/console zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        rm messages.*.php
+
+      - |
+        @(if !messages.overwrite_compatibility)
+        cd $(envs.local.root)
+        tar zxf $(file)
+        php app/console zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") 
+        php app/console zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") 
+        php app/console zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") 
+        rm messages.*.php
 
   messages.pull:
     help: 'Pull a message archive from a remote env into the current environment'
@@ -81,16 +103,28 @@ tasks:
       target_env:  ?
       file: ?
     flags:
+      overwrite: false
       overwrite_unknown: false
       overwrite_user: false
       overwrite_import: true
     do:
-      - scp $(file) $(envs[target_env].ssh):$(envs[target_env].root)$(file)
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); tar zxf $(file)"
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import")
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import")
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite_unknown ? "--overwrite-unknown") $(overwrite_user ? "--overwrite-user") $(overwrite_import ? "--overwrite-import")
-      - ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); rm messages.*.php"
+      - |
+        @(if messages.overwrite_compatibility)
+        scp $(file) $(envs[target_env].ssh):$(envs[target_env].root)$(file)
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); tar zxf $(file)"
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); rm messages.*.php"
+
+      - |
+        @(if !messages.overwrite_compatibility)
+        scp $(file) $(envs[target_env].ssh):$(envs[target_env].root)$(file)
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); tar zxf $(file)"
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.nl.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.en.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); php app/console --env=$(target_env) zicht:messages:load messages.fr.php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")
+        ssh $(envs[target_env].ssh) "cd $(envs[target_env].root); rm messages.*.php"
 
   messages.cleanup:
     help: Find all project yml files and rewrite them into a consistent format
