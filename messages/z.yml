@@ -127,5 +127,5 @@ tasks:
   messages.cleanup:
     help: Find all project yml files and rewrite them into a consistent format
     do:
-      - $(messages.yaz_cleanup) message cleanup --duplicate-strategy=first --sync-strategy=use-key --depth-strategy=join $(VERBOSE ? "--verbose")
+      - $(messages.yaz_cleanup) message cleanup --duplicate-strategy=first --sync-strategy=use-key --depth-strategy=join --indent=4 $(VERBOSE ? "--verbose")
       
