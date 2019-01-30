@@ -30,6 +30,7 @@ class Plugin extends BasePlugin
                 ->arrayNode('messages')
                     ->addDefaultsIfNotSet()
                     ->children()
+                        ->arrayNode('languages')->performNoDeepMerging()->prototype('scalar')->end()->defaultValue(array('nl', 'en', 'fr'))->end()
                         ->booleanNode('overwrite_compatibility')->defaultTrue()->end()
                         ->scalarNode('yaz_cleanup')->end()
                     ->end()
