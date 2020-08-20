@@ -28,13 +28,13 @@ tasks:
           @(sh local ? SHELL : ssh(target_env))
           @(if messages.overwrite_compatibility)
           cd $(envs[target_env].root);
-          find vendor/zicht src -type f -name "*.??.yml" -exec $(defaults("php_bin", target_env, "php")) $(envs[target_env].root)$(symfony.console) --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite") zicht:messages:load '{}' +
+          find $(messages.translation_dirs) -type f -name "*.??.yml" -exec $(defaults("php_bin", target_env, "php")) $(envs[target_env].root)$(symfony.console) --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite") zicht:messages:load '{}' +
 
       - |
           @(sh local ? SHELL : ssh(target_env))
           @(if !messages.overwrite_compatibility)
           cd $(envs[target_env].root);
-          find vendor/zicht src -type f -name "*.??.yml" -exec $(defaults("php_bin", target_env, "php")) $(envs[target_env].root)$(symfony.console) --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") zicht:messages:load '{}' +
+          find $(messages.translation_dirs) -type f -name "*.??.yml" -exec $(defaults("php_bin", target_env, "php")) $(envs[target_env].root)$(symfony.console) --env=$(target_env) $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import") zicht:messages:load '{}' +
 
   messages.local.backup:
     help: 'Backup messages from current/local environmant for all locales into a message archive'
