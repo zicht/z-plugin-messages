@@ -7,10 +7,10 @@ tasks:
       target_env: ?
       _backup_file: sprintf("messages-%s-%s.tar.gz", target_env, now)
     do:
-      - @(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root) && $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:dump $(lang) --format php > messages.$(lang).php
-      - @(sh ssh(target_env)) cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php
+      - '@(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root) && $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:dump $(lang) --format php > messages.$(lang).php'
+      - '@(sh ssh(target_env)) cd $(envs[target_env].root) && tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php'
       - rsync $(VERBOSE ? "--progress") $(envs[target_env].ssh):$(envs[target_env].root)$(_backup_file) ./$(_backup_file)
-      - @(sh ssh(target_env)) cd $(envs[target_env].root) && rm $(_backup_file) messages.*.php
+      - '@(sh ssh(target_env)) cd $(envs[target_env].root) && rm $(_backup_file) messages.*.php'
     yield: _backup_file
 
   messages.load_files:
@@ -41,7 +41,7 @@ tasks:
     args:
       _backup_file: sprintf("messages-local-%s.tar.gz", now)
     do:
-      - @(for lang in messages.languages) $(defaults("php_bin", "local", "php")) $(symfony.console) zicht:messages:dump $(lang) --format php > messages.$(lang).php
+      - '@(for lang in messages.languages) $(defaults("php_bin", "local", "php")) $(symfony.console) zicht:messages:dump $(lang) --format php > messages.$(lang).php'
       - tar zc$(VERBOSE ? "v")f $(_backup_file) messages.*.php
       - rm messages.*.php
       - echo "--> $(_backup_file)"
@@ -58,8 +58,8 @@ tasks:
       overwrite_import: true
     do:
       - cd $(envs.local.root) && tar zxf $(file)
-      - @(if messages.overwrite_compatibility) @(for lang in messages.languages) $(symfony.console) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
-      - @(if !messages.overwrite_compatibility) @(for lang in messages.languages) $(symfony.console) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")
+      - '@(if messages.overwrite_compatibility) @(for lang in messages.languages) $(symfony.console) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")'
+      - '@(if !messages.overwrite_compatibility) @(for lang in messages.languages) $(symfony.console) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")'
       - cd $(envs.local.root) && rm messages.*.php
 
   messages.pull:
@@ -68,7 +68,7 @@ tasks:
       target_env: ?
       file: tasks.messages.backup
     do:
-      - @messages.load
+      - '@messages.load'
       - rm $(file)
 
   messages.push:
@@ -79,7 +79,7 @@ tasks:
 
       z messages:backup staging
       z messages:push production ./messages-staging-*.tar.gz
-    unless: !confirm(sprintf("You are pushing message archive <comment>%s</comment> to environment <comment>%s</comment>, are you sure?", file, target_env))
+    unless: '!confirm(sprintf("You are pushing message archive <comment>%s</comment> to environment <comment>%s</comment>, are you sure?", file, target_env)) && !messages.overwrite_compatibility'
     args:
       target_env:  ?
       file: ?
@@ -88,16 +88,15 @@ tasks:
       overwrite_unknown: false
       overwrite_user: false
       overwrite_import: true
-    unless: !messages.overwrite_compatibility
     do:
       - scp $(file) $(envs[target_env].ssh):$(envs[target_env].root)$(file)
-      - @(sh ssh(target_env)) cd $(envs[target_env].root); tar zxf $(file)
-      - @(if messages.overwrite_compatibility) @(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root); $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")
-      - @(if !messages.overwrite_compatibility) @(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root); $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")
-      - @(sh ssh(target_env)) cd $(envs[target_env].root); rm messages.*.php
+      - '@(sh ssh(target_env)) cd $(envs[target_env].root); tar zxf $(file)'
+      - '@(if messages.overwrite_compatibility) @(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root); $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite ? "--overwrite")'
+      - '@(if !messages.overwrite_compatibility) @(for lang in messages.languages) @(sh ssh(target_env)) cd $(envs[target_env].root); $(defaults("php_bin", target_env, "php")) $(symfony.console) --env=$(target_env) zicht:messages:load messages.$(lang).php $(VERBOSE ? "--verbose") $(overwrite_unknown || overwrite ? "--overwrite-unknown") $(overwrite_user || overwrite ? "--overwrite-user") $(overwrite_import || overwrite ? "--overwrite-import")'
+      - '@(sh ssh(target_env)) cd $(envs[target_env].root); rm messages.*.php'
 
   messages.cleanup:
     help: Find all project yml files and rewrite them into a consistent format
     do:
       - $(messages.yaz_cleanup) message cleanup --duplicate-strategy=first --sync-strategy=use-key --depth-strategy=join --indent=4 $(VERBOSE ? "--verbose")
-      
+
